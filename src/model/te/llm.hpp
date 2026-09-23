@@ -332,9 +332,17 @@ namespace LLM {
                         }
                     }
                 }
-                if (contains(name, "embed_tokens.weight")) {
-                    config.hidden_size = tensor_storage.ne[0];
-                    config.vocab_size  = tensor_storage.ne[1];
+                if (ends_with(name, "embed_tokens.weight")) {
+                    // HF layout stores [vocab, hidden] while GGUF-style stores [hidden, vocab].
+                    // (ne is reversed from the safetensors shape, and *_weight_scale tensors
+                    //  must be excluded because their name contains "embed_tokens.weight".)
+                    if (tensor_storage.ne[0] >= tensor_storage.ne[1]) {
+                        config.vocab_size  = tensor_storage.ne[0];
+                        config.hidden_size = tensor_storage.ne[1];
+                    } else {
+                        config.hidden_size = tensor_storage.ne[0];
+                        config.vocab_size  = tensor_storage.ne[1];
+                    }
                 }
                 if (ends_with(name, "layers.0.mlp.gate_proj.weight")) {
                     config.intermediate_size = tensor_storage.ne[1];

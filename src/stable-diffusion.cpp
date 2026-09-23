@@ -785,3 +785,40 @@ SD_API void free_sd_images(sd_image_t* result_images, int num_images) {
 
     free(result_images);
 }
+
+// --- model_defaults compat (llama-box API, replaces old model_defaults.patch) ---
+void sd_get_model_defaults(const sd_ctx_t* sd_ctx, sd_model_defaults_t* defaults) {
+    if (defaults == nullptr) {
+        return;
+    }
+
+    *defaults                = {};
+    defaults->strength        = 0.75f;
+    defaults->sampling_steps = 20;
+    defaults->cfg_scale      = 4.5f;
+    defaults->width          = 1024;
+    defaults->height         = 1024;
+
+    if (sd_ctx == nullptr || sd_ctx->sd == nullptr) {
+        return;
+    }
+
+    const SDVersion version = sd_ctx->sd->version;
+    if (sd_version_is_qwen_image(version)) {
+        defaults->sampling_steps = 40;
+        defaults->cfg_scale      = 1.0f;
+        return;
+    }
+
+    switch (version) {
+        case VERSION_SD1_INPAINT:
+        case VERSION_SD2_INPAINT:
+        case VERSION_SDXL_INPAINT:
+        case VERSION_FLUX_FILL:
+            defaults->strength       = 1.0f;
+            defaults->sampling_steps = 50;
+            break;
+        default:
+            break;
+    }
+}

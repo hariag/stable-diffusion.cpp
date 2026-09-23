@@ -513,6 +513,16 @@ SD_API const char* sd_get_model_version_name(const sd_ctx_t* sd_ctx);
 SD_API enum sample_method_t sd_get_default_sample_method(const sd_ctx_t* sd_ctx);
 SD_API enum scheduler_t sd_get_default_scheduler(const sd_ctx_t* sd_ctx, enum sample_method_t sample_method);
 
+typedef struct sd_model_defaults_t {
+    float   strength;
+    int32_t sampling_steps;
+    float   cfg_scale;
+    int32_t width;
+    int32_t height;
+} sd_model_defaults_t;
+
+SD_API void sd_get_model_defaults(const sd_ctx_t* sd_ctx, sd_model_defaults_t* defaults);
+
 SD_API void sd_img_gen_params_init(sd_img_gen_params_t* sd_img_gen_params);
 SD_API char* sd_img_gen_params_to_str(const sd_img_gen_params_t* sd_img_gen_params);
 SD_API bool generate_image(sd_ctx_t* sd_ctx,

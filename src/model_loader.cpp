@@ -164,7 +164,7 @@ void convert_tensor(void* src,
 /*================================================= ModelLoader ==================================================*/
 
 ModelLoader::ModelLoader()
-    : n_threads_(sd_get_num_physical_cores()) {
+    : n_threads_(getenv("SD_LOAD_THREADS") ? atoi(getenv("SD_LOAD_THREADS")) : sd_get_num_physical_cores()) {
 }
 
 size_t ModelLoader::add_file_path(const std::string& file_path) {

@@ -1302,7 +1302,9 @@ namespace WAN {
                      std::shared_ptr<RunnerWeightManager> weight_manager = nullptr)
             : VAE(version, backend, prefix, weight_manager), decode_only(decode_only) {
             const auto conv_in = tensor_storage_map.find((prefix.empty() ? "" : prefix + ".") + "decoder.conv1.weight");
-            const bool is_2D   = conv_in != tensor_storage_map.end() && conv_in->second.ne[2] > 3;
+            // Qwen Image 2.1 stores its 2D VAE convolutions with a singleton temporal axis.
+            const bool is_2D   = version == VERSION_QWEN_IMAGE_2_1 ||
+                               (conv_in != tensor_storage_map.end() && conv_in->second.ne[2] > 3);
             LOG_VERBOSE("Wan VAE convolution type: %s", is_2D ? "2D" : "3D");
             ae = WanVAE(decode_only, version, is_2D);
             ae.init(params_ctx, tensor_storage_map, prefix);

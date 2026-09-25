@@ -26,6 +26,7 @@ struct TensorStorage {
     int int8_convrot_group_size = 0;
     int64_t ne[SD_MAX_DIMS]     = {1, 1, 1, 1, 1};
     int n_dims                  = 0;
+    int original_n_dims          = 0;
 
     std::string storage_key;
     size_t file_index      = 0;
@@ -37,7 +38,7 @@ struct TensorStorage {
     TensorStorage() = default;
 
     TensorStorage(std::string name, ggml_type type, const int64_t* ne, int n_dims, size_t file_index, size_t offset = 0)
-        : name(std::move(name)), type(type), n_dims(n_dims), file_index(file_index), offset(offset) {
+        : name(std::move(name)), type(type), n_dims(n_dims), original_n_dims(n_dims), file_index(file_index), offset(offset) {
         for (int i = 0; i < n_dims; i++) {
             this->ne[i] = ne[i];
         }

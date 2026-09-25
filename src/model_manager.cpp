@@ -763,10 +763,24 @@ bool ModelManager::validate_tensor(const TensorState& state) const {
     }
 
     const TensorStorage& tensor_storage = state.source;
-    if (state.tensor->ne[0] != tensor_storage.ne[0] ||
-        state.tensor->ne[1] != tensor_storage.ne[1] ||
-        state.tensor->ne[2] != tensor_storage.ne[2] ||
-        state.tensor->ne[3] != tensor_storage.ne[3]) {
+    const bool shape_matches = state.tensor->ne[0] == tensor_storage.ne[0] &&
+                               state.tensor->ne[1] == tensor_storage.ne[1] &&
+                               state.tensor->ne[2] == tensor_storage.ne[2] &&
+                               state.tensor->ne[3] == tensor_storage.ne[3];
+    // A singleton-time VAE Conv3d checkpoint [out,in,1,kh,kw] is flattened by
+    // the Safetensors reader to [kw,kh,1,out*in]. Its bytes match the 2D
+    // Conv2d layout [kw,kh,in,out] when the spatial axes and element count agree.
+    const bool flattened_single_frame_vae_weight =
+        state.component == ModelComponent::VAE &&
+        state.name.rfind("first_stage_model.", 0) == 0 &&
+        tensor_storage.original_n_dims == 5 &&
+        tensor_storage.n_dims == 4 &&
+        tensor_storage.ne[0] == state.tensor->ne[0] &&
+        tensor_storage.ne[1] == state.tensor->ne[1] &&
+        tensor_storage.ne[2] == 1 &&
+        state.tensor->ne[2] > 1 &&
+        tensor_storage.nelements() == ggml_nelements(state.tensor);
+    if (!shape_matches && !flattened_single_frame_vae_weight) {
         LOG_ERROR(
             "%s tensor '%s' has wrong shape in model metadata: got [%d, %d, %d, %d], expected [%d, %d, %d, %d]",
             model_component_name(state.component),

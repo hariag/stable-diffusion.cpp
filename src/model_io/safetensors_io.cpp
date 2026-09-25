@@ -304,6 +304,7 @@ bool read_safetensors_file(const std::string& file_path,
         }
 
         int n_dims              = (int)shape.size();
+        const int original_n_dims = n_dims;
         int64_t ne[SD_MAX_DIMS] = {1, 1, 1, 1, 1};
         uint64_t elements       = 1;
         for (int i = 0; i < n_dims; i++) {
@@ -335,6 +336,7 @@ bool read_safetensors_file(const std::string& file_path,
         }
 
         TensorStorage tensor_storage(name, type, ne, n_dims, 0, data_start + begin);
+        tensor_storage.original_n_dims = original_n_dims;
         tensor_storage.reverse_ne();
 
         if (ends_with(name, ".weight")) {

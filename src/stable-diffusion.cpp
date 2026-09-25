@@ -805,8 +805,8 @@ void sd_get_model_defaults(const sd_ctx_t* sd_ctx, sd_model_defaults_t* defaults
 
     const SDVersion version = sd_ctx->sd->version;
     if (sd_version_is_qwen_image(version)) {
-        defaults->sampling_steps = 40;
-        defaults->cfg_scale      = 1.0f;
+        defaults->sampling_steps = 20;
+        defaults->cfg_scale      = 6.0f;
         return;
     }
 

@@ -24,6 +24,7 @@ namespace WAN {
         std::tuple<int, int, int> padding;
         std::tuple<int, int, int> dilation;
         bool bias;
+        float scale = 1.f;
 
         void init_params(ggml_context* ctx, const String2TensorStorage& tensor_storage_map = {}, const std::string prefix = "") override {
             auto weight = tensor_storage_map.find(prefix + "weight");
@@ -60,6 +61,10 @@ namespace WAN {
               dilation(std::move(dilation)),
               bias(bias) {}
 
+        void set_scale(float scale_value) {
+            scale = scale_value;
+        }
+
         ggml_tensor* forward(GGMLRunnerContext* ctx, ggml_tensor* x, ggml_tensor* cache_x = nullptr) {
             // x: [N*IC, ID, IH, IW]
             // result: x: [N*OC, ID, IH, IW]
@@ -86,7 +91,7 @@ namespace WAN {
                                     std::get<2>(stride), std::get<1>(stride), std::get<0>(stride),
                                     0, 0, 0,
                                     std::get<2>(dilation), std::get<1>(dilation), std::get<0>(dilation),
-                                    false, ctx->conv3d_direct_enabled);
+                                    false, ctx->conv3d_direct_enabled, scale);
         }
     };
 
@@ -1102,6 +1107,19 @@ namespace WAN {
                 blocks["conv2"] = std::shared_ptr<GGMLBlock>(new Conv2dBut3d(z_dim, z_dim, {1, 1}));
             } else {
                 blocks["conv2"] = std::shared_ptr<GGMLBlock>(new CausalConv3d(z_dim, z_dim, {1, 1, 1}));
+            }
+            if (version == VERSION_QWEN_IMAGE_2_1) {
+                // Keep large VAE activations within the FP16 convolution range.
+                const float conv_scale = 1.f / 128.f;
+                std::vector<GGMLBlock*> all_blocks;
+                get_all_blocks(all_blocks);
+                for (auto* block : all_blocks) {
+                    if (auto* conv = dynamic_cast<Conv2d*>(block)) {
+                        conv->set_scale(conv_scale);
+                    } else if (auto* conv = dynamic_cast<CausalConv3d*>(block)) {
+                        conv->set_scale(conv_scale);
+                    }
+                }
             }
         }
 
